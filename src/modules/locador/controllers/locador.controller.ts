@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { CriarLocadorDto } from '../dto/create-locador.dto';
 import { LocadorService } from '../services/locador.service';
+import { AtualizarLocadorDto } from '../dto/update-locador.dto';
+import { ListarLocadoresQueryDto } from '../dto/listar-locadores-query.dto';
 
 @Controller('locadores')
 export class LocadorController {
@@ -23,7 +25,41 @@ export class LocadorController {
   }
 
   @Get()
-  listarLocadores() {
-    return this.locadorService.listarLocadores();
+  listarLocadores(@Query() query: ListarLocadoresQueryDto) {
+    const usuarioIdCorretorLogado = 1;
+  
+    return this.locadorService.listarLocadores(
+      usuarioIdCorretorLogado,
+      query.status,
+    );
   }
+
+  @Get(':id')
+  buscarLocadorPorId(@Param('id', ParseIntPipe) id: number) {
+    const usuarioIdCorretorLogado = 1;
+
+    return this.locadorService.buscarLocadorPorId(id, usuarioIdCorretorLogado);
+  }
+
+  @Patch(':id')
+  atualizarLocador(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() atualizarLocadorDto: AtualizarLocadorDto,
+  ) {
+    const usuarioIdCorretorLogado = 1;
+  
+    return this.locadorService.atualizarLocador(
+      id,
+      atualizarLocadorDto,
+      usuarioIdCorretorLogado,
+    );
+  }
+
+  @Delete(':id')
+  inativarLocador(@Param('id', ParseIntPipe) id: number) {
+    const usuarioIdCorretorLogado = 1;
+  
+    return this.locadorService.inativarLocador(id, usuarioIdCorretorLogado);
+  }
+
 }
