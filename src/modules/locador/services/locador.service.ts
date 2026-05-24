@@ -206,4 +206,39 @@ export class LocadorService {
     return LocadorMapper.paraResposta(locadorInativado);
   } 
 
+  async reativarLocador(id: number, usuarioIdCorretorLogado: number) {
+    if (!id || id <= 0) {
+      throw new BadRequestException('ID do locador inválido.');
+    }
+
+    if (!usuarioIdCorretorLogado || usuarioIdCorretorLogado <= 0) {
+      throw new BadRequestException('ID do corretor logado inválido.');
+    }
+
+    const locadorExistente = await this.prisma.locador.findFirst({
+      where: {
+        id: BigInt(id),
+        usuario_id: BigInt(usuarioIdCorretorLogado),
+      },
+    });
+
+    if (!locadorExistente) {
+      throw new NotFoundException('Locador não encontrado.');
+    }
+
+    const locadorReativado = await this.prisma.locador.update({
+      where: {
+        id: BigInt(id),
+      },
+      data: {
+        status: locador_status.ATIVO,
+      },
+      include: {
+        endereco_locador: true,
+      },
+    });
+
+    return LocadorMapper.paraResposta(locadorReativado);
+  }
+
 }

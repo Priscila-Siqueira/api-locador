@@ -1,67 +1,52 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 
-export class CriarEnderecoLocadorDto {
+export class EnderecoLocadorResponseDto {
+  @ApiProperty({
+    example: 1,
+    description: 'ID do locador vinculado ao endereço.',
+  })
+  locadorId!: number;
+
   @ApiProperty({
     example: 'Rua das Flores',
     description: 'Logradouro do endereço do locador.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @Length(1, 150)
   logradouro!: string;
 
   @ApiProperty({
     example: '123',
     description: 'Número do endereço.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @Length(1, 20)
   numero!: string;
 
   @ApiPropertyOptional({
     example: 'Apartamento 45',
+    nullable: true,
     description: 'Complemento do endereço.',
   })
-  @IsString()
-  @IsOptional()
-  @Length(1, 100)
-  complemento?: string;
+  complemento?: string | null;
 
   @ApiProperty({
     example: 'Centro',
     description: 'Bairro do endereço.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @Length(1, 100)
   bairro!: string;
 
   @ApiProperty({
     example: 'São Paulo',
     description: 'Cidade do endereço.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @Length(1, 100)
   cidade!: string;
 
   @ApiProperty({
     example: 'SP',
     description: 'Estado em formato UF.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @Length(2, 2)
   estado!: string;
 
   @ApiProperty({
     example: '01001000',
     description: 'CEP do endereço.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @Length(8, 9)
   cep!: string;
 }
