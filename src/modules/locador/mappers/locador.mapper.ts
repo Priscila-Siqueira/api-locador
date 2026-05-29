@@ -1,4 +1,4 @@
-import { endereco_locador, locador } from '@prisma/client';
+import type { endereco_locador, locador } from '../../../generated/prisma/client';
 
 type LocadorComEndereco = locador & {
   endereco_locador: endereco_locador | null;

@@ -1,9 +1,5 @@
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { locador_status } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 import { StatusLocador } from '../enums/status-locador.enum';
 import { LocadorService } from './locador.service';
@@ -30,7 +26,7 @@ describe('LocadorService', () => {
     nome: 'João da Silva',
     cpf: '12345678901',
     email: 'joao@email.com',
-    status: locador_status.ATIVO,
+    status: StatusLocador.ATIVO,
     criado_em: new Date('2026-05-23T10:00:00.000Z'),
     atualizado_em: new Date('2026-05-23T10:00:00.000Z'),
     endereco_locador: {
@@ -69,7 +65,7 @@ describe('LocadorService', () => {
     expect(prismaMock.locador.findMany).toHaveBeenCalledWith({
       where: {
         usuario_id: BigInt(1),
-        status: locador_status.ATIVO,
+        status: StatusLocador.ATIVO,
       },
       include: {
         endereco_locador: true,
@@ -86,7 +82,7 @@ describe('LocadorService', () => {
       nome: 'João da Silva',
       cpf: '12345678901',
       email: 'joao@email.com',
-      status: locador_status.ATIVO,
+      status: StatusLocador.ATIVO,
     });
   });
 
@@ -94,7 +90,7 @@ describe('LocadorService', () => {
     prismaMock.locador.findMany.mockResolvedValue([
       {
         ...locadorMock,
-        status: locador_status.INATIVO,
+        status: StatusLocador.INATIVO,
       },
     ]);
 
@@ -103,7 +99,7 @@ describe('LocadorService', () => {
     expect(prismaMock.locador.findMany).toHaveBeenCalledWith({
       where: {
         usuario_id: BigInt(1),
-        status: locador_status.INATIVO,
+        status: StatusLocador.INATIVO,
       },
       include: {
         endereco_locador: true,
@@ -113,7 +109,7 @@ describe('LocadorService', () => {
       },
     });
 
-    expect(resultado[0].status).toBe(locador_status.INATIVO);
+    expect(resultado[0].status).toBe(StatusLocador.INATIVO);
   });
 
   it('deve lançar BadRequestException quando ID do corretor for inválido na listagem', async () => {
@@ -156,7 +152,7 @@ describe('LocadorService', () => {
     prismaMock.locador.findFirst.mockResolvedValue(locadorMock);
     prismaMock.locador.update.mockResolvedValue({
       ...locadorMock,
-      status: locador_status.INATIVO,
+      status: StatusLocador.INATIVO,
     });
 
     const resultado = await service.inativarLocador(1, 1);
@@ -166,25 +162,25 @@ describe('LocadorService', () => {
         id: BigInt(1),
       },
       data: {
-        status: locador_status.INATIVO,
+        status: StatusLocador.INATIVO,
       },
       include: {
         endereco_locador: true,
       },
     });
 
-    expect(resultado.status).toBe(locador_status.INATIVO);
+    expect(resultado.status).toBe(StatusLocador.INATIVO);
   });
 
   it('deve reativar locador', async () => {
     prismaMock.locador.findFirst.mockResolvedValue({
       ...locadorMock,
-      status: locador_status.INATIVO,
+      status: StatusLocador.INATIVO,
     });
 
     prismaMock.locador.update.mockResolvedValue({
       ...locadorMock,
-      status: locador_status.ATIVO,
+      status: StatusLocador.ATIVO,
     });
 
     const resultado = await service.reativarLocador(1, 1);
@@ -194,13 +190,13 @@ describe('LocadorService', () => {
         id: BigInt(1),
       },
       data: {
-        status: locador_status.ATIVO,
+        status: StatusLocador.ATIVO,
       },
       include: {
         endereco_locador: true,
       },
     });
 
-    expect(resultado.status).toBe(locador_status.ATIVO);
+    expect(resultado.status).toBe(StatusLocador.ATIVO);
   });
 });

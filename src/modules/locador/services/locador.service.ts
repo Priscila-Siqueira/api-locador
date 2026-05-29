@@ -4,12 +4,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { locador_status, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 import { CriarLocadorDto } from '../dto/create-locador.dto';
 import { AtualizarLocadorDto } from '../dto/update-locador.dto';
 import { StatusLocador } from '../enums/status-locador.enum';
 import { LocadorMapper } from '../mappers/locador.mapper';
+
+function isPrismaUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'P2002'
+  );
+}
 
 @Injectable()
 export class LocadorService {
@@ -45,10 +53,7 @@ export class LocadorService {
 
       return LocadorMapper.paraResposta(locadorCriado);
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isPrismaUniqueConstraintError(error)) {
         throw new ConflictException('CPF ou e-mail já cadastrado.');
       }
 
@@ -57,19 +62,19 @@ export class LocadorService {
   }
 
   async listarLocadores(
-  usuarioIdCorretorLogado: number,
-  status?: StatusLocador,
+    usuarioIdCorretorLogado: number,
+    status?: StatusLocador,
   ) {
     if (!usuarioIdCorretorLogado || usuarioIdCorretorLogado <= 0) {
       throw new BadRequestException('ID do corretor logado inválido.');
     }
-  
+
     const statusFiltro = status ?? StatusLocador.ATIVO;
-  
+
     const locadores = await this.prisma.locador.findMany({
       where: {
         usuario_id: BigInt(usuarioIdCorretorLogado),
-        status: statusFiltro as locador_status,
+        status: statusFiltro,
       },
       include: {
         endereco_locador: true,
@@ -78,13 +83,17 @@ export class LocadorService {
         id: 'desc',
       },
     });
-  
+
     return LocadorMapper.paraListaResposta(locadores);
   }
 
   async buscarLocadorPorId(id: number, usuarioIdCorretorLogado: number) {
     if (!id || id <= 0) {
       throw new BadRequestException('ID do locador inválido.');
+    }
+
+    if (!usuarioIdCorretorLogado || usuarioIdCorretorLogado <= 0) {
+      throw new BadRequestException('ID do corretor logado inválido.');
     }
 
     const locador = await this.prisma.locador.findFirst({
@@ -105,68 +114,71 @@ export class LocadorService {
   }
 
   async atualizarLocador(
-  id: number,
-  atualizarLocadorDto: AtualizarLocadorDto,
-  usuarioIdCorretorLogado: number,
+    id: number,
+    atualizarLocadorDto: AtualizarLocadorDto,
+    usuarioIdCorretorLogado: number,
   ) {
     if (!id || id <= 0) {
       throw new BadRequestException('ID do locador inválido.');
     }
-  
+
+    if (!usuarioIdCorretorLogado || usuarioIdCorretorLogado <= 0) {
+      throw new BadRequestException('ID do corretor logado inválido.');
+    }
+
     const locadorExistente = await this.prisma.locador.findFirst({
       where: {
         id: BigInt(id),
         usuario_id: BigInt(usuarioIdCorretorLogado),
       },
     });
-  
+
     if (!locadorExistente) {
       throw new NotFoundException('Locador não encontrado.');
     }
-  
+
     try {
-      const locadorAtualizado = await this.prisma.$transaction(async (prisma) => {
-        if (atualizarLocadorDto.endereco) {
-          await prisma.endereco_locador.update({
+      const locadorAtualizado = await this.prisma.$transaction(
+        async (prisma) => {
+          if (atualizarLocadorDto.endereco) {
+            await prisma.endereco_locador.update({
+              where: {
+                locador_id: BigInt(id),
+              },
+              data: {
+                logradouro: atualizarLocadorDto.endereco.logradouro,
+                numero: atualizarLocadorDto.endereco.numero,
+                complemento: atualizarLocadorDto.endereco.complemento,
+                bairro: atualizarLocadorDto.endereco.bairro,
+                cidade: atualizarLocadorDto.endereco.cidade,
+                estado: atualizarLocadorDto.endereco.estado,
+                cep: atualizarLocadorDto.endereco.cep,
+              },
+            });
+          }
+
+          return prisma.locador.update({
             where: {
-              locador_id: BigInt(id),
+              id: BigInt(id),
             },
             data: {
-              logradouro: atualizarLocadorDto.endereco.logradouro,
-              numero: atualizarLocadorDto.endereco.numero,
-              complemento: atualizarLocadorDto.endereco.complemento,
-              bairro: atualizarLocadorDto.endereco.bairro,
-              cidade: atualizarLocadorDto.endereco.cidade,
-              estado: atualizarLocadorDto.endereco.estado,
-              cep: atualizarLocadorDto.endereco.cep,
+              nome: atualizarLocadorDto.nome,
+              cpf: atualizarLocadorDto.cpf,
+              email: atualizarLocadorDto.email,
+            },
+            include: {
+              endereco_locador: true,
             },
           });
-        }
-      
-        return prisma.locador.update({
-          where: {
-            id: BigInt(id),
-          },
-          data: {
-            nome: atualizarLocadorDto.nome,
-            cpf: atualizarLocadorDto.cpf,
-            email: atualizarLocadorDto.email,
-          },
-          include: {
-            endereco_locador: true,
-          },
-        });
-      });
-    
+        },
+      );
+
       return LocadorMapper.paraResposta(locadorAtualizado);
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isPrismaUniqueConstraintError(error)) {
         throw new ConflictException('CPF ou e-mail já cadastrado.');
       }
-    
+
       throw error;
     }
   }
@@ -196,7 +208,7 @@ export class LocadorService {
         id: BigInt(id),
       },
       data: {
-        status: locador_status.INATIVO,
+        status: StatusLocador.INATIVO,
       },
       include: {
         endereco_locador: true,
@@ -204,7 +216,7 @@ export class LocadorService {
     });
 
     return LocadorMapper.paraResposta(locadorInativado);
-  } 
+  }
 
   async reativarLocador(id: number, usuarioIdCorretorLogado: number) {
     if (!id || id <= 0) {
@@ -231,7 +243,7 @@ export class LocadorService {
         id: BigInt(id),
       },
       data: {
-        status: locador_status.ATIVO,
+        status: StatusLocador.ATIVO,
       },
       include: {
         endereco_locador: true,
@@ -240,5 +252,4 @@ export class LocadorService {
 
     return LocadorMapper.paraResposta(locadorReativado);
   }
-
 }
