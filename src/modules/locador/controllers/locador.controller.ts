@@ -34,7 +34,7 @@ import { LocadorService } from '../services/locador.service';
 @ApiTags('Locadores')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('USER')
+@Roles('USER', 'ADMIN')
 @Controller('locadores')
 export class LocadorController {
   constructor(private readonly locadorService: LocadorService) {}
