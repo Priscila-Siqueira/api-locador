@@ -48,6 +48,38 @@ npx prisma -v
 
 ---
 
+## Arquitetura da Aplicação
+
+A API Locador foi organizada seguindo a estrutura padrão do NestJS, com separação por módulos, controllers, services, DTOs, guards, strategies e camada de acesso ao banco.
+
+Fluxo básico de uma requisição protegida:
+
+```text
+Requisição HTTP
+   ↓
+Controller
+   ↓
+JwtAuthGuard
+   ↓
+RolesGuard
+   ↓
+Service
+   ↓
+PrismaService
+   ↓
+Banco MariaDB/MySQL
+```
+
+O `Controller` recebe as requisições HTTP e encaminha para o `Service`.
+
+O `Service` concentra a regra de negócio, como cadastrar, listar, atualizar, inativar e reativar locadores.
+
+O `PrismaService` centraliza a conexão com o banco de dados usando Prisma ORM e MariaDB.
+
+Os `Guards` são responsáveis por proteger as rotas, validando o JWT e as permissões de acesso por role.
+
+---
+
 ## Estrutura Principal do Projeto
 
 ```text
@@ -453,7 +485,7 @@ status = ATIVO
 
 ## Testes
 
-Rodar todos os testes:
+Rodar testes unitários:
 
 ```bash
 npm test
@@ -465,6 +497,35 @@ Resultado esperado:
 Test Suites: 2 passed
 Tests: 13 passed
 ```
+
+Rodar teste e2e:
+
+```bash
+npm run test:e2e
+```
+
+Resultado esperado:
+
+```text
+Test Suites: 1 passed
+Tests: 1 passed
+```
+
+O teste e2e valida o endpoint público:
+
+```http
+GET /health
+```
+
+Observação: o teste e2e depende da conexão com o banco configurado na variável `DATABASE_URL`.
+
+Durante a execução do teste e2e, pode aparecer o aviso abaixo:
+
+```text
+ExperimentalWarning: VM Modules is an experimental feature
+```
+
+Esse aviso é esperado por causa da combinação entre Prisma 7 e Jest. Ele não indica falha se o teste finalizar com `PASS`.
 
 Rodar testes com cobertura:
 
@@ -488,6 +549,14 @@ Criar a imagem Docker:
 
 ```bash
 docker build -t api-locador .
+```
+
+Antes de rodar o container, verifique se o arquivo `.env` existe na raiz do projeto e contém:
+
+```env
+PORT=3001
+DATABASE_URL=mysql://USUARIO:SENHA@SERVIDOR:3306/NOME_DO_BANCO
+JWT_SECRET=SUA_CHAVE_JWT
 ```
 
 Rodar o container:
@@ -569,10 +638,16 @@ Rodar local:
 npm run start:dev
 ```
 
-Rodar testes:
+Rodar testes unitários:
 
 ```bash
 npm test
+```
+
+Rodar teste e2e:
+
+```bash
+npm run test:e2e
 ```
 
 Gerar build:
@@ -649,6 +724,28 @@ DATABASE_URL="mysql://USUARIO:SENHA@SERVIDOR:3306/NOME_DO_BANCO"
 
 ---
 
+### Teste e2e falha por conexão com banco
+
+O teste e2e valida o endpoint `/health`.
+
+Como o `/health` verifica a conexão com o banco, o teste pode falhar se o banco da faculdade estiver indisponível ou se a `DATABASE_URL` estiver incorreta.
+
+Solução:
+
+```bash
+Get-Content .env.example
+```
+
+Depois confira se o arquivo `.env` real possui os valores corretos de:
+
+```env
+PORT
+DATABASE_URL
+JWT_SECRET
+```
+
+---
+
 ## Status do Projeto
 
 Funcionalidades implementadas:
@@ -664,4 +761,5 @@ Funcionalidades implementadas:
 * Swagger/OpenAPI;
 * Prisma 7.8.0;
 * Docker;
-* Testes unitários.
+* Testes unitários;
+* Teste e2e do endpoint `/health`.
