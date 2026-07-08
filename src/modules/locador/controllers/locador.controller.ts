@@ -277,6 +277,7 @@ export class LocadorController {
   }
 
   @Delete(':id/hard')
+  @Roles('ADMIN')
   @ApiOperation({
     summary: 'Hard Delete: Remover locador',
     description:
