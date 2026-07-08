@@ -12,7 +12,7 @@ function criarConfiguracaoMariaDb(databaseUrl: string) {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: decodeURIComponent(url.pathname.replace('/', '')),
-    connectionLimit: 5,
+    connectionLimit: 10,
   };
 }
 
