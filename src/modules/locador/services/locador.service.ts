@@ -252,4 +252,42 @@ export class LocadorService {
 
     return LocadorMapper.paraResposta(locadorReativado);
   }
+
+  async removerLocadorDefinitivo(id: number, usuarioIdCorretorLogado: number) {
+    if (!id || id <= 0) {
+      throw new BadRequestException('ID do locador inválido.');
+    }
+
+    if (!usuarioIdCorretorLogado || usuarioIdCorretorLogado <= 0) {
+      throw new BadRequestException('ID do corretor logado inválido.');
+    }
+
+    const locadorExistente = await this.prisma.locador.findFirst({
+      where: {
+        id: BigInt(id),
+        usuario_id: BigInt(usuarioIdCorretorLogado),
+      },
+    });
+
+    if (!locadorExistente) {
+      throw new NotFoundException('Locador não encontrado.');
+    }
+
+    // Como pode haver endereco_locador atrelado, vamos deletar em transação (se a FK não for cascade)
+    // Se a FK for cascade, delete apenas locador. Vamos assumir que precisamos apagar o endereço antes se for 1:1, ou podemos confiar no cascade se houver.
+    // Vamos usar transação para ser seguro
+    await this.prisma.$transaction(async (prisma) => {
+      // Deletar endereço associado primeiro (para evitar erro de FK)
+      await prisma.endereco_locador.deleteMany({
+        where: { locador_id: BigInt(id) },
+      });
+
+      // Deletar locador
+      await prisma.locador.delete({
+        where: { id: BigInt(id) },
+      });
+    });
+
+    return { message: 'Locador removido definitivamente com sucesso.' };
+  }
 }

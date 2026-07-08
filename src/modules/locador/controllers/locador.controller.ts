@@ -275,4 +275,42 @@ export class LocadorController {
   ) {
     return this.locadorService.reativarLocador(id, usuario.id);
   }
+
+  @Delete(':id/hard')
+  @ApiOperation({
+    summary: 'Hard Delete: Remover locador',
+    description:
+      'Realiza a exclusão física do locador e de seu endereço associado.',
+  })
+  @ApiParam({
+    name: 'id',
+    example: 1,
+    description: 'ID do locador.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Locador removido definitivamente com sucesso.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ID do locador inválido.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token JWT ausente, inválido ou expirado.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário sem permissão para acessar este recurso.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Locador não encontrado.',
+  })
+  removerLocadorDefinitivo(
+    @UsuarioLogado() usuario: UsuarioAutenticado,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.locadorService.removerLocadorDefinitivo(id, usuario.id);
+  }
 }
